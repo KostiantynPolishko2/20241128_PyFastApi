@@ -1,5 +1,6 @@
 import uvicorn
-from webapi import app
+from controllers.note_routers import router
+from webapi import create_app
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='127.0.0.3', port=8081)
+    uvicorn.run(create_app('Notes', router), host='127.0.0.3', port=8081)
