@@ -1,16 +1,16 @@
 from fastapi import HTTPException, status
 from typing import List, Dict
-from entities import Note
+from entities import Note, UpdateNote
 from context import notes
 
 class NoteService:
-    def get_notes(self)-> List[Note] | HTTPException:
+    def get(self)-> List[Note] | HTTPException:
         if len(notes) == 0:
             raise HTTPException(status_code=404, detail='not found')
 
         return notes
 
-    def get_note_by_id(self, id: int)->Note | HTTPException:
+    def get_by_id(self, id: int)->Note | HTTPException:
         for note in notes:
             if id == note.id:
                 return note
@@ -26,28 +26,41 @@ class NoteService:
 
         return None
 
-    def add_note(self, note: Note)->HTTPException | dict[str:int]:
+    def add(self, note: Note)->HTTPException | dict[str:int]:
         self.is_title_exist(note.title)
         note.id = notes[len(notes)-1].id+1
         notes.append(note)
 
         return {"response": status.HTTP_201_CREATED}
 
-    def update_note(self, id: int, new_note: Note)->HTTPException | dict[str:int]:
-        for note in notes:
-            if id == note.id:
-                note = new_note
-                note.id = id
+    def update(self, id: int, new_note: Note)->HTTPException | dict[str:int]:
+        for index, note in enumerate(notes):
+            if note.id == id:
+                notes[index] = new_note
+                notes[index].id = id
                 return {"response": status.HTTP_202_ACCEPTED}
 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Note id {id} not found!')
 
-    def delete_note(self, id: int)->HTTPException | dict[str:int]:
+    def delete(self, id: int)->HTTPException | dict[str:int]:
         if len(notes)==0:
             raise HTTPException(status_code=404, detail='not found')
         for note in notes:
             if id == note.id:
                 notes.remove(note)
                 return {"response": status.HTTP_205_RESET_CONTENT}
+
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Note id {id} not found!')
+
+    def modify(self, id: int, update_note: UpdateNote):
+        if len(notes)==0:
+            raise HTTPException(status_code=404, detail='not found')
+
+        for index, note in enumerate(notes):
+            if id == note.id:
+                update_data = update_note.model_dump(exclude_unset=True)
+                notes[index] = notes[index].model_copy(update=update_data)
+
+                return {"response": status.HTTP_202_ACCEPTED}
 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Note id {id} not found!')
